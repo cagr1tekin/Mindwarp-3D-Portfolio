@@ -109,9 +109,31 @@ export default function MainSceneContent({ portalActive }) {
     timeline.to(camera.position, {
       x: memoryRoomPosition.x,
       y: memoryRoomPosition.y, 
-      z: memoryRoomPosition.z + 10,
+      z: memoryRoomPosition.z,
       duration: 2.5,
-      ease: "power4.in"
+      ease: "power4.in",
+      onComplete: () => {
+        // Tam küpün içine yerleş ve çevreye bak
+        camera.position.set(
+          memoryRoomPosition.x, 
+          memoryRoomPosition.y, 
+          memoryRoomPosition.z
+        );
+        
+        // Bak küpün duvarına doğru
+        // İlk başta ön duvara bakıyoruz (negatif z yönünde)
+        camera.lookAt(memoryRoomPosition.x, memoryRoomPosition.y, memoryRoomPosition.z - 30);
+        camera.updateProjectionMatrix();
+        
+        // Anı odasına vardığında atmosfer sesini başlat
+        const audioManager = document.getElementById('audio-manager');
+        if (audioManager) {
+          audioManager.dispatchEvent(new CustomEvent('playMemoryAmbience'));
+        }
+        
+        // Debug bilgisi
+        console.log("Kamera anı odasına ulaştı:", camera.position);
+      }
     }, "-=0.3");
     
     // 4. FOV'u normale döndür ve hafif bir yavaşlama

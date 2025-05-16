@@ -3,7 +3,7 @@ import { useRef, useEffect } from "react";
 import * as THREE from "three";
 
 export default function SpaceGLB() {
-  const { scene } = useGLTF("/need_some_space.glb");
+  const { scene } = useGLTF("/Mindwarp-3D-Portfolio/need_some_space.glb");
   const ref = useRef();
 
   useEffect(() => {

@@ -6,7 +6,7 @@ import gsap from 'gsap';
 
 export default function CharacterModel() {
   // Model yükleme
-  const { scene } = useGLTF("/sample.glb");
+  const { scene } = useGLTF("/Mindwarp-3D-Portfolio/sample.glb");
   const groupRef = useRef();
   const modelRef = useRef();
   const [modelLoaded, setModelLoaded] = useState(false);
@@ -167,4 +167,4 @@ export default function CharacterModel() {
 }
 
 // Modeli önbelleğe al
-useGLTF.preload("/sample.glb");
+useGLTF.preload("/Mindwarp-3D-Portfolio/sample.glb");

@@ -10,7 +10,7 @@ export default function SkyEnvironmentGLB() {
 
   useEffect(() => {
     // PNG dosyasını yükle - düşük çözünürlükte olduğundan emin olun
-    textureLoader.load("/deep_space_skybox.png", (texture) => {
+    textureLoader.load("/Mindwarp-3D-Portfolio/deep_space_skybox.png", (texture) => {
       // Dokuyu panoramik olarak ayarla (küresel görünüm için)
       texture.mapping = THREE.EquirectangularReflectionMapping;
       texture.generateMipmaps = false; // Mipmap oluşturmayı kapat (performans için)

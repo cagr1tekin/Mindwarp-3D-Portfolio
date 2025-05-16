@@ -32,7 +32,7 @@ export default function App() {
 
   return (
     <div className="container">
-      <AudioManager />
+      <AudioManager id="audio-manager" />
       <FPSMonitor visible={true} />
       
       <Canvas
