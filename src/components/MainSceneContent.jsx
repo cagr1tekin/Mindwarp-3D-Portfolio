@@ -413,26 +413,25 @@ export default function MainSceneContent({ portalActive }) {
       )}
       
       {/* Anılar odası - ileri doğru, kullanıcının baktığı yönde */}
-      <group position={memoryRoomPosition}>
-        <MemoryRoom visible={nextScene} />
-      </group>
+      {nextScene && (
+  <MemoryRoom visible={true} />
+)}
+
       
       {/* Kamera kontrolleri - Kullanıcının kamerayı çevirebilmesi için */}
-      <OrbitControls 
-        ref={controlsRef}
-        makeDefault
-        enableZoom={true}
-        enablePan={true}
-        minDistance={10}
-        maxDistance={5000}
-        rotateSpeed={-0.5}
-        panSpeed={-0.5}
-        zoomSpeed={0.8}
-        minPolarAngle={0.1}
-        maxPolarAngle={Math.PI - 0.1}
-        dampingFactor={0.05}
-        enableDamping={true}
-      />
+      {!nextScene && (
+  <OrbitControls
+    ref={controlsRef}
+    enableZoom={true}
+    enablePan={true}
+    dampingFactor={0.05}
+    enableDamping={true}
+    rotateSpeed={-0.5}
+    zoomSpeed={0.8}
+    panSpeed={-0.5}
+  />
+)}
+
     </>
   );
 } 
