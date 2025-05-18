@@ -22,21 +22,31 @@ export default function MemoryCube({ size = 100, position = [0, 0, -5000] }) {
 
   if (!texture) return null;
 
-  const materials = new Array(6).fill(
-    new THREE.MeshBasicMaterial({
-      map: texture,
-      side: THREE.BackSide // içten görünmesi için
-    })
-  );
+  const materials = [
+    // Right
+    new THREE.MeshBasicMaterial({ map: texture, side: THREE.BackSide, transparent: true, opacity: 0.2 }),
+    // Left
+    new THREE.MeshBasicMaterial({ map: texture, side: THREE.BackSide, transparent: true, opacity: 0.2 }),
+    // Top
+    new THREE.MeshBasicMaterial({ map: texture, side: THREE.BackSide, transparent: true, opacity: 0.1 }),
+    // Bottom (taban)
+    new THREE.MeshBasicMaterial({ map: texture, side: THREE.BackSide, transparent: true, opacity: 0.5 }),
+    // Front
+    new THREE.MeshBasicMaterial({ map: texture, side: THREE.BackSide, transparent: true, opacity: 0.2 }),
+    // Back
+    new THREE.MeshBasicMaterial({ map: texture, side: THREE.BackSide, transparent: true, opacity: 0.2 })
+  ];
+  
 
   return (
     <group ref={groupRef} position={position}>
       <mesh>
-        <boxGeometry args={[size, size, size]} />
-        {materials.map((mat, i) => (
-          <primitive attach={`material-${i}`} object={mat} key={i} />
-        ))}
-      </mesh>
+  <boxGeometry args={[size, size, size]} />
+  {materials.map((mat, i) => (
+    <primitive attach={`material-${i}`} object={mat} key={i} />
+  ))}
+</mesh>
+
     </group>
   );
 }

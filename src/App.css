@@ -31,7 +31,7 @@ html, body, #root {
   left: 0px;
   width: 300px;
   height: 300px;
-  z-index: 10;
+  z-index: 9999;
   background-color: transparent;
   pointer-events: auto;
 }
@@ -61,4 +61,21 @@ html, body, #root {
   font-size: 20px;
   z-index: 20;
   cursor: pointer;
+}
+.black-fade-overlay {
+  position: fixed;
+  z-index: 9998;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: black;
+  animation: fadeInOut 1s ease-in-out forwards;
+}
+
+@keyframes fadeInOut {
+  0%   { opacity: 0; }
+  30%  { opacity: 1; }
+  70%  { opacity: 1; }
+  100% { opacity: 0; }
 }

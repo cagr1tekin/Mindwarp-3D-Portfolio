@@ -1,44 +1,36 @@
-import { useRef, useEffect, useState } from "react";
-import { useVideoTexture } from "@react-three/drei";
-import * as THREE from "three";
+// components/VideoMemory.jsx
+import { useEffect, useRef } from "react";
+import "../styles/VideoMemory.css";
 
-export default function VideoMemory({ videoSrc, position, rotation }) {
-  const [videoLoaded, setVideoLoaded] = useState(false);
+export default function VideoMemory({ onFinish }) {
+  const videoRef = useRef();
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
   
-  // Video dokusu yükleme işleminde hata yakalama
-  let videoTexture;
-  try {
-    videoTexture = useVideoTexture(videoSrc, {
-      crossOrigin: 'anonymous',
-      muted: true,
-      loop: true,
-      start: true,
-      unsuspend: "canplay",
-      playsInline: true
-    });
-    
-    // Video başarıyla yüklendiyse
-    useEffect(() => {
-      setVideoLoaded(true);
-    }, [videoTexture]);
-  } catch (error) {
-    console.warn(`Video dokusu yüklenemedi: ${videoSrc}`, error);
-  }
+    video.playbackRate = 2;
+    video.play();
   
-  // Video yüklenemezse renk dokusu kullan
-  if (!videoLoaded) {
-    return (
-      <mesh position={position} rotation={rotation}>
-        <planeGeometry args={[16, 9]} />
-        <meshBasicMaterial color="#4a2d99" side={THREE.BackSide} />
-      </mesh>
-    );
-  }
+    // Tam süresini bekleyip sonra bile oynasın
+    const timer = setTimeout(() => {
+      video.pause();
+      if (onFinish) onFinish();
+    }, 5500); // 11 saniyenin 2x'i
   
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
-    <mesh position={position} rotation={rotation}>
-      <planeGeometry args={[16, 9]} />
-      <meshBasicMaterial map={videoTexture} toneMapped={false} side={THREE.BackSide} />
-    </mesh>
+    <div className="video-overlay">
+      <video
+        ref={videoRef}
+        src="./public/tunnelEfect.mp4"
+        muted
+        autoPlay
+        playsInline
+        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+      />
+    </div>
   );
 }

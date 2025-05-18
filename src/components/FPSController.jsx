@@ -8,7 +8,9 @@ export default function FPSController({
   initialPosition = [0, -48.3, -5000],
   initialLookAt = [0, -48.3, -4990],
   jumpForce = 15,
-  gravity = 20
+  gravity = 20,
+  bobbingSpeed = 14, // Yürüme efekti hızı
+  bobbingAmount = 0.05 // Yürüme efekti miktarı
 }) {
   const { camera } = useThree();
 
@@ -21,7 +23,8 @@ export default function FPSController({
     grounded: true,
     velocity: new THREE.Vector3(),
     running: false,   // ← SHIFT
-    crouching: false  // ← CTRL
+    crouching: false,  // ← CTRL
+    bobbingTime: 0 // Yürüme efekti için zaman
   });
   
 
@@ -30,6 +33,29 @@ export default function FPSController({
   const moveVector = useRef(new THREE.Vector3());
   const tempVector = useRef(new THREE.Vector3());
   const frameCount = useRef(0);
+  const yaw = useRef(0); // Sağa sola dönüş
+const pitch = useRef(0); // Yukarı aşağı bakış
+
+useEffect(() => {
+    const onMouseMove = (e) => {
+      const sensitivity = 0.002;
+      yaw.current -= e.movementX * sensitivity;
+      pitch.current -= e.movementY * sensitivity;
+  
+      // Yukarı/aşağı sınırı (bakış açısı aşırı olmasın)
+      const maxPitch = Math.PI / 2 - 0.1;
+      const minPitch = -Math.PI / 2 + 0.1;
+      pitch.current = Math.max(minPitch, Math.min(maxPitch, pitch.current));
+    };
+  
+    window.addEventListener('mousemove', onMouseMove);
+  
+    return () => {
+      window.removeEventListener('mousemove', onMouseMove);
+    };
+  }, []);
+  
+
 
   // Başlangıç pozisyon ve bakış yönü
   useEffect(() => {
@@ -93,6 +119,11 @@ export default function FPSController({
 
 
   useFrame((state, delta) => {
+    // Kamerayı mouse yönüne göre döndür
+const quat = new THREE.Quaternion();
+quat.setFromEuler(new THREE.Euler(pitch.current, yaw.current, 0, 'YXZ'));
+camera.quaternion.copy(quat);
+    
     camera.getWorldDirection(cameraDirection.current);
     cameraDirection.current.y = 0;
     cameraDirection.current.normalize();
@@ -103,7 +134,14 @@ export default function FPSController({
     const moveZ = (moveState.current.forward ? 1 : 0) - (moveState.current.backward ? 1 : 0);
     const moveX = (moveState.current.right ? 1 : 0) - (moveState.current.left ? 1 : 0);
     const speedMultiplier = moveState.current.running ? 2.0 : 1.0;
-  
+    
+    // Hareket varsa bobbing efekti uygula
+    if ((moveZ !== 0 || moveX !== 0) && moveState.current.grounded) {
+      moveState.current.bobbingTime += delta * bobbingSpeed * speedMultiplier;
+      const bobbingOffset = Math.sin(moveState.current.bobbingTime) * bobbingAmount;
+      camera.position.y = initialPosition[1] + bobbingOffset;
+    }
+
     const moveDelta = new THREE.Vector3()
       .add(cameraDirection.current.clone().multiplyScalar(moveZ))
       .add(rightDirection.clone().multiplyScalar(moveX))
