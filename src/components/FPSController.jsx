@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 
@@ -7,7 +7,7 @@ export default function FPSController({
   bounds = 200,
   initialPosition = [0, -48.3, -5000],
   initialLookAt = [0, -48.3, -4990],
-  jumpForce = 15,
+  jumpForce = 10,
   gravity = 20,
   bobbingSpeed = 14, // Yürüme efekti hızı
   bobbingAmount = 0.05 // Yürüme efekti miktarı
@@ -29,6 +29,7 @@ export default function FPSController({
   
 
   // Kamera yönü için vektörler
+  const [locked, setLocked] = useState(false);
   const cameraDirection = useRef(new THREE.Vector3());
   const moveVector = useRef(new THREE.Vector3());
   const tempVector = useRef(new THREE.Vector3());
@@ -37,23 +38,24 @@ export default function FPSController({
 const pitch = useRef(0); // Yukarı aşağı bakış
 
 useEffect(() => {
-    const onMouseMove = (e) => {
-      const sensitivity = 0.002;
-      yaw.current -= e.movementX * sensitivity;
-      pitch.current -= e.movementY * sensitivity;
-  
-      // Yukarı/aşağı sınırı (bakış açısı aşırı olmasın)
-      const maxPitch = Math.PI / 2 - 0.1;
-      const minPitch = -Math.PI / 2 + 0.1;
-      pitch.current = Math.max(minPitch, Math.min(maxPitch, pitch.current));
-    };
-  
-    window.addEventListener('mousemove', onMouseMove);
-  
-    return () => {
-      window.removeEventListener('mousemove', onMouseMove);
-    };
-  }, []);
+  const onMouseMove = (e) => {
+    if (!locked) return; // 🔒 Kilitli değilse çık
+
+    const sensitivity = 0.002;
+    yaw.current -= e.movementX * sensitivity;
+    pitch.current -= e.movementY * sensitivity;
+
+    const maxPitch = Math.PI / 2 - 0.1;
+    const minPitch = -Math.PI / 2 + 0.1;
+    pitch.current = Math.max(minPitch, Math.min(maxPitch, pitch.current));
+  };
+
+  window.addEventListener("mousemove", onMouseMove);
+  return () => {
+    window.removeEventListener("mousemove", onMouseMove);
+  };
+}, [locked]); // 🔑 locked'a bağlı
+
   
 
 
@@ -71,6 +73,29 @@ useEffect(() => {
       console.error('Kamera ayarları sırasında hata:', error);
     }
   }, [camera, initialPosition, initialLookAt]);
+
+  useEffect(() => {
+    const onPointerLockChange = () => {
+      setLocked(document.pointerLockElement === document.body);
+    };
+  
+    document.addEventListener("pointerlockchange", onPointerLockChange);
+    return () => {
+      document.removeEventListener("pointerlockchange", onPointerLockChange);
+    };
+  }, []);
+  
+  useEffect(() => {
+    const handleClick = () => {
+      if (document.pointerLockElement !== document.body) {
+        document.body.requestPointerLock();
+      }
+    };
+  
+    window.addEventListener("click", handleClick);
+    return () => window.removeEventListener("click", handleClick);
+  }, []);
+  
 
   // Tuş olayları
   useEffect(() => {

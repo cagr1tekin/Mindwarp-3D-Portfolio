@@ -1,3 +1,5 @@
+import SpawnElevator from "./SpawnElevator";
+import PortalElevator from "./PortalElevator";// en üste ekle
 import React, { useState, useEffect } from 'react';
 import MemoryCube from "./MemoryCube";
 import { useThree, useLoader } from "@react-three/fiber";
@@ -72,7 +74,7 @@ export default function MemoryRoom({ visible = true }) {
   texturePath="./public/m11.jpg" 
   position={[0, 0, -5000]} // küple aynı merkezde olacak
 />
-
+<pointLight position={[0, -48, -5000]} intensity={2} distance={300} color="#ffffff" />
 
       <MemoryCube size={CUBE_SIZE} position={CUBE_POSITION} />
       
@@ -90,8 +92,19 @@ export default function MemoryRoom({ visible = true }) {
   scale={[2, 2, 2]}
   emissiveIntensity={3}
 />
-<pointLight position={[0, -48, -5000]} intensity={2} distance={300} color="#ffffff" />
 
+<SpawnElevator 
+  cubeSize={CUBE_SIZE} 
+  cubePosition={CUBE_POSITION}
+/>
+<PortalElevator
+  cubeSize={CUBE_SIZE}
+  cubePosition={CUBE_POSITION}
+  onTeleport={() => {
+    console.log("🌀 Teleport gerçekleşti!");
+    // sahne geçişi, video oynatma gibi şeyleri burada yap
+  }}
+/>
       <FPSController
         bounds={CUBE_SIZE / 2 - 1}
         initialPosition={[0, -CUBE_SIZE / 2 + 10, -5000]}

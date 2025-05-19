@@ -12,51 +12,21 @@ export default function MainSceneContent({ portalActive, onRequestVideoStart }) 
   const { camera } = useThree();
   const [showPortal, setShowPortal] = useState(false);
   const [lightspeedActive, setLightspeedActive] = useState(false);
-  const [cameraShaking, setCameraShaking] = useState(false);
-  const originalCameraPos = useRef(null);
 
   useEffect(() => {
-    if (portalActive) {
-      setShowPortal(true);
-    }
+    if (portalActive) setShowPortal(true);
   }, [portalActive]);
 
-  useFrame((state, delta) => {
-    if (cameraShaking) {
-      const intensity = 0.06 * (1 + Math.sin(state.clock.elapsedTime * 12) * 0.5);
-      camera.position.x += (Math.random() - 0.5) * intensity;
-      camera.position.y += (Math.random() - 0.5) * intensity;
-      camera.rotation.z += (Math.random() - 0.5) * intensity * 0.08;
-
-      if (originalCameraPos.current) {
-        camera.position.x = THREE.MathUtils.lerp(
-          camera.position.x,
-          originalCameraPos.current.x,
-          delta * 5
-        );
-        camera.position.y = THREE.MathUtils.lerp(
-          camera.position.y,
-          originalCameraPos.current.y,
-          delta * 5
-        );
-      }
-    }
-  });
-
-  // Portala tıklanınca kamerayı yaklaştır ve App'e haber ver
   const handlePortalClick = () => {
-    const targetZ = camera.position.z - 45;
-
+    // Kamera yaklaşsın
     gsap.to(camera.position, {
       duration: 1.5,
-      z: targetZ,
+      z: camera.position.z - 45,
       ease: "power2.inOut",
-      onComplete: () => {
-        if (onRequestVideoStart) {
-          onRequestVideoStart(); // App'e bildir: video başlasın, blackfade açsın
-        }
-      }
     });
+
+    // App'e video geçişini bildir
+    if (onRequestVideoStart) onRequestVideoStart();
   };
 
   return (
@@ -73,16 +43,20 @@ export default function MainSceneContent({ portalActive, onRequestVideoStart }) 
         <SpiralPortal active={true} onClick={handlePortalClick} />
       )}
 
-      <OrbitControls
-        ref={controlsRef}
-        enableZoom={true}
-        enablePan={true}
-        dampingFactor={0.05}
-        enableDamping={true}
-        rotateSpeed={-0.5}
-        zoomSpeed={0.8}
-        panSpeed={-0.5}
-      />
+      {/* TPS kontrol - sadece MainScene'de */}
+      {!portalActive && (
+  <OrbitControls
+    ref={controlsRef}
+    enableZoom={true}
+    enablePan={true}
+    dampingFactor={0.05}
+    enableDamping={true}
+    rotateSpeed={-0.5}
+    zoomSpeed={0.8}
+    panSpeed={-0.5}
+  />
+)}
+
     </>
   );
 }

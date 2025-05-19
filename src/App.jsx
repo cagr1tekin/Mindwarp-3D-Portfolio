@@ -6,7 +6,7 @@ import FPSMonitor from "./components/FPSMonitor";
 import AudioManager from "./components/AudioManager";
 import VideoMemory from "./components/VideoMemory";
 import MemoryRoom from "./components/MemoryRoom";
-import BlackFade from "./components/BlackFade"; // 🔴 BU ÖNEMLİ
+import BlackFade from "./components/BlackFade";
 
 import "./App.css";
 
@@ -14,33 +14,37 @@ export default function App() {
   const [portalActive, setPortalActive] = useState(false);
   const [playVideo, setPlayVideo] = useState(false);
   const [showMemoryRoom, setShowMemoryRoom] = useState(false);
-  const [showBlack, setShowBlack] = useState(false); // 🔴 BU EKSİKTİ
+  const [showBlack, setShowBlack] = useState(false);
 
-  // Başlatma butonuna basınca portal açılır
+  const FADE_DURATION = 1000;
+  const VIDEO_DURATION = 5500;
+
   const handleEnterMyMindClick = () => {
     setPortalActive(true);
   };
 
-  // Portala tıklanınca video başlar ve sahne geçişi yapılır
   const handlePortalClick = () => {
-    setShowBlack(true); // Siyahlık başlar
-    setTimeout(() => {
-      setPlayVideo(true); // Video başlat
-      setShowBlack(false); // Siyah kaybolur
-    }, 1000);
+    setShowBlack(true);
 
     setTimeout(() => {
-      setShowBlack(true); // Video biterken tekrar siyah
-    }, 6000); // 5sn video + fadeout için buffer
+      setPlayVideo(true);
+      setShowBlack(false);
+    }, FADE_DURATION);
+
+    setTimeout(() => {
+      setShowBlack(true);
+    }, FADE_DURATION + VIDEO_DURATION - 1000);
 
     setTimeout(() => {
       setPlayVideo(false);
+      setShowMemoryRoom(true);
+    }, FADE_DURATION + VIDEO_DURATION);
+
+    setTimeout(() => {
       setShowBlack(false);
-      setShowMemoryRoom(true); // Video bitti, anı odasına geç
-    }, 7500); // Toplam 7.5sn → siyahlık kalkar, odadayız
+    }, FADE_DURATION + VIDEO_DURATION + FADE_DURATION);
   };
 
-  // Mouse wheel uyarısını engelle
   useEffect(() => {
     const options = { passive: true };
     const emptyScroll = () => {};
@@ -52,24 +56,13 @@ export default function App() {
 
   return (
     <div className="container">
-
-      {/* 🎵 Arka Plan Ses ve FPS */}
       <AudioManager id="audio-manager" />
       <FPSMonitor visible={true} />
 
-      {/* 🎞️ Video Overlay + Siyah Geçiş */}
-      {showBlack && (
-  <BlackFade
-    show={showBlack}
-    onFadeOut={() => {
-      // FadeOut tamamlanınca yapılacak işlemler
-      console.log("fade out bitti");
-    }}
-  />
-)}
+      <BlackFade show={showBlack} duration={1500} />
+
       {playVideo && <VideoMemory />}
 
-      {/* 🌌 Ana Sahne */}
       <Canvas
         className="main-canvas"
         camera={{ position: [0, 0, 50], fov: 60, near: 0.1, far: 50000 }}
@@ -85,15 +78,16 @@ export default function App() {
         <ambientLight intensity={1.3} />
         <directionalLight position={[50, 50, 50]} intensity={1.8} color="#ffffff" />
         <Suspense fallback={<></>}>
-          <MainSceneContent
-            portalActive={portalActive}
-            onRequestVideoStart={handlePortalClick}
-          />
-          {showMemoryRoom && <MemoryRoom visible={true} />}
-        </Suspense>
+  {!showMemoryRoom && (
+    <MainSceneContent
+      portalActive={portalActive}
+      onRequestVideoStart={handlePortalClick}
+    />
+  )}
+  {showMemoryRoom && <MemoryRoom visible={true} />}
+</Suspense>
       </Canvas>
 
-      {/* 🧑 Karakter Sahnesi */}
       <Canvas
         className="character-canvas"
         style={{
@@ -122,7 +116,6 @@ export default function App() {
         </Suspense>
       </Canvas>
 
-      {/* 🚪 Portal Giriş Butonu */}
       {!portalActive && (
         <div className="enter-button">
           <button onClick={handleEnterMyMindClick}>Enter My Mind</button>

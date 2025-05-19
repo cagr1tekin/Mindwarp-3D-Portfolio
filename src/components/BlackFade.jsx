@@ -1,30 +1,25 @@
 import { useEffect, useState } from "react";
 
-export default function BlackFade({ show, onFadeOut }) {
+export default function BlackFade({ show, duration = 1000 }) {
   const [visible, setVisible] = useState(false);
   const [opacity, setOpacity] = useState(0);
 
   useEffect(() => {
-    let timeout;
-
     if (show) {
       setVisible(true);
-      // Fade-in için opacity'yi bir sonraki frame'de güncelle
       requestAnimationFrame(() => {
-        setOpacity(1);
+        setOpacity(1); // fade-in
       });
     } else {
-      setOpacity(0);
-      timeout = setTimeout(() => {
-        setVisible(false);
-        if (onFadeOut) onFadeOut();
-      }, 1000); // 1 saniye = transition süresi
+      setOpacity(0); // fade-out
+      const timeout = setTimeout(() => {
+        setVisible(false); // DOM'dan çıkar
+      }, duration); // fade-out süresi
+      return () => clearTimeout(timeout);
     }
+  }, [show, duration]);
 
-    return () => clearTimeout(timeout);
-  }, [show, onFadeOut]);
-
-  if (!visible) return null;
+  if (!visible && opacity === 0) return null;
 
   return (
     <div
@@ -35,10 +30,10 @@ export default function BlackFade({ show, onFadeOut }) {
         width: "100vw",
         height: "100vh",
         backgroundColor: "black",
-        opacity: opacity,
-        pointerEvents: "none",
+        opacity,
+        transition: `opacity ${duration}ms ease-in-out`, // Süre dinamik
         zIndex: 9999,
-        transition: "opacity 1s ease-in-out",
+        pointerEvents: "none",
       }}
     />
   );
