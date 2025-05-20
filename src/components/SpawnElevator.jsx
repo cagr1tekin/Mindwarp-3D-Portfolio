@@ -1,38 +1,96 @@
 import { useLoader, useFrame } from "@react-three/fiber";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
+import { RigidBody } from "@react-three/rapier";
 import * as THREE from "three";
 
-export default function SpawnElevator({ cubeSize = 100, cubePosition = [0, 0, -5000] }) {
+// Dışa FPSController için pozisyon aktar
+export const elevatorWorldPosition = new THREE.Vector3();
+
+
+export default function SpawnElevator({ cubeSize = 100, cubePosition = [0, 0, -5000], onAnimationDone }) {
   const gltf = useLoader(GLTFLoader, "./elevator_s7ntech2.glb");
   const mixer = useRef();
+  const rigidRef = useRef();
+  const targetMesh = useRef();
+  const [animationDone, setAnimationDone] = useState(false);
 
   useEffect(() => {
-    if (gltf.animations.length > 0) {
-      mixer.current = new THREE.AnimationMixer(gltf.scene);
-      const action = mixer.current.clipAction(gltf.animations[0]);
-      action.setLoop(THREE.LoopOnce);
-      action.clampWhenFinished = true;
-      action.timeScale = -1;
-      action.play();
-      action.time = action.getClip().duration;
-    }
+    if (!gltf?.scene || gltf.animations.length === 0) return;
+
+    mixer.current = new THREE.AnimationMixer(gltf.scene);
+    const action = mixer.current.clipAction(gltf.animations[0]);
+    action.setLoop(THREE.LoopOnce);
+    action.clampWhenFinished = true;
+    action.timeScale = -1; // ters oynatma
+    action.play();
+    action.time = action.getClip().duration; // sondan başlat
+
+    mixer.current.addEventListener("finished", () => {
+        setAnimationDone(true);
+        if (onAnimationDone) onAnimationDone(); // callback çalıştır
+
+      });
+      
+
+    gltf.scene.traverse((child) => {
+      if (child.name === "arc1Base") {
+        targetMesh.current = child;
+      }
+    });
   }, [gltf]);
 
-  useFrame((state, delta) => {
-    mixer.current?.update(delta);
+  useFrame(() => {
+    mixer.current?.update(1 / 60);
+
+    if (!animationDone && rigidRef.current && targetMesh.current) {
+      // Hedef pozisyonu al
+      targetMesh.current.getWorldPosition(elevatorWorldPosition);
+      rigidRef.current.setNextKinematicTranslation(elevatorWorldPosition);
+    }
   });
 
-  const z = cubePosition[2] - cubeSize / 2; // C kenarı
-  const y = cubePosition[1] - cubeSize / 2 + 0.1;
-  const x = cubePosition[0];
+  // Asansör grubunun pozisyonu
+  const [x, y, z] = [
+    cubePosition[0],
+    cubePosition[1] - cubeSize / 2 + 0.1,
+    cubePosition[2] - cubeSize / 2
+  ];
 
   return (
-    <primitive
-      object={gltf.scene}
-      position={[x, y, z]}
-      rotation={[0, Math.PI, 0]}
-      scale={[8, 8, 8]}
-    />
+    <group position={[x, y, z]}>
+      {/* GLB modeli */}
+      <primitive object={gltf.scene} rotation={[0, Math.PI, 0]} scale={[8, 8, 8]} />
+
+      {/* Bardak collider yapısı */}
+{!animationDone && (
+  <RigidBody ref={rigidRef} type="kinematicPosition" colliders={false}>
+    
+    {/* Yan çeper */}
+    <mesh position={[0, 5, 0]}>
+      <cylinderGeometry args={[4.5, 4.5, 10, 32, 1, true]} />
+      <meshStandardMaterial
+        color="limegreen"
+        transparent
+        opacity={0.2}
+        side={THREE.DoubleSide} // 👈 Bu satırı ekledik
+      />
+    </mesh>
+
+    {/* Taban */}
+    <mesh position={[0, 0, 0]}>
+      <cylinderGeometry args={[4.5, 4.5, 0.5, 32]} />
+      <meshStandardMaterial
+        color="red"
+        transparent
+        opacity={0.3}
+        side={THREE.DoubleSide} // 👈 Bu da önemli
+      />
+    </mesh>
+
+  </RigidBody>
+)}
+
+    </group>
   );
 }

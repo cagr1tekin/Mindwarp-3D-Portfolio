@@ -1,5 +1,7 @@
 import { Canvas } from "@react-three/fiber";
 import { Suspense, useState, useEffect } from "react";
+import { Physics } from '@react-three/rapier';
+
 import MainSceneContent from "./components/MainSceneContent";
 import CharacterModel from "./components/CharacterModel";
 import FPSMonitor from "./components/FPSMonitor";
@@ -19,32 +21,30 @@ export default function App() {
   const FADE_DURATION = 1000;
   const VIDEO_DURATION = 5500;
 
-  const handleEnterMyMindClick = () => {
-    setPortalActive(true);
-  };
-
+  // Kullanıcı portal'a tıkladığında sırayla video ve memory room geçişi yapılır
   const handlePortalClick = () => {
-    setShowBlack(true);
+    setShowBlack(true); // siyaha geç
 
     setTimeout(() => {
-      setPlayVideo(true);
+      setPlayVideo(true); // video başla
       setShowBlack(false);
     }, FADE_DURATION);
 
     setTimeout(() => {
-      setShowBlack(true);
+      setShowBlack(true); // tekrar karart
     }, FADE_DURATION + VIDEO_DURATION - 1000);
 
     setTimeout(() => {
       setPlayVideo(false);
-      setShowMemoryRoom(true);
+      setShowMemoryRoom(true); // video bitti, sahneye geç
     }, FADE_DURATION + VIDEO_DURATION);
 
     setTimeout(() => {
-      setShowBlack(false);
+      setShowBlack(false); // siyahı kapat
     }, FADE_DURATION + VIDEO_DURATION + FADE_DURATION);
   };
 
+  // Scroll disable
   useEffect(() => {
     const options = { passive: true };
     const emptyScroll = () => {};
@@ -58,11 +58,11 @@ export default function App() {
     <div className="container">
       <AudioManager id="audio-manager" />
       <FPSMonitor visible={true} />
-
       <BlackFade show={showBlack} duration={1500} />
 
       {playVideo && <VideoMemory />}
 
+      {/* Ana sahne */}
       <Canvas
         className="main-canvas"
         camera={{ position: [0, 0, 50], fov: 60, near: 0.1, far: 50000 }}
@@ -77,17 +77,21 @@ export default function App() {
       >
         <ambientLight intensity={1.3} />
         <directionalLight position={[50, 50, 50]} intensity={1.8} color="#ffffff" />
-        <Suspense fallback={<></>}>
-  {!showMemoryRoom && (
-    <MainSceneContent
-      portalActive={portalActive}
-      onRequestVideoStart={handlePortalClick}
-    />
-  )}
-  {showMemoryRoom && <MemoryRoom visible={true} />}
-</Suspense>
+
+        <Suspense fallback={null}>
+          <Physics gravity={[0, -30, 0]}>
+            {!showMemoryRoom && (
+              <MainSceneContent
+                portalActive={portalActive}
+                onRequestVideoStart={handlePortalClick}
+              />
+            )}
+            {showMemoryRoom && <MemoryRoom visible={true} />}
+          </Physics>
+        </Suspense>
       </Canvas>
 
+      {/* Karakter modeli (köşe avatar) */}
       <Canvas
         className="character-canvas"
         style={{
@@ -116,9 +120,10 @@ export default function App() {
         </Suspense>
       </Canvas>
 
+      {/* Ana giriş butonu */}
       {!portalActive && (
         <div className="enter-button">
-          <button onClick={handleEnterMyMindClick}>Enter My Mind</button>
+          <button onClick={() => setPortalActive(true)}>Enter My Mind</button>
         </div>
       )}
     </div>
