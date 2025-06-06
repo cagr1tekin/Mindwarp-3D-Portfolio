@@ -1,41 +1,79 @@
-import { useLoader, useFrame } from "@react-three/fiber";
-import { useEffect, useRef } from "react";
+import { useLoader, useFrame, useThree } from "@react-three/fiber";
+import { useEffect, useRef, useState } from "react";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import * as THREE from "three";
+import { RigidBody } from "@react-three/rapier";
 
-export default function PortalElevator({ cubeSize = 100, cubePosition = [0, 0, -5000], onTeleport }) {
-  const gltf = useLoader(GLTFLoader, "./elevator_s7ntech1.glb"); // ← YOLU DÜZELT!
+export default function PortalElevator({ cubeSize = 100, cubePosition = [0, 0, -5000], onFinish, disableControls }) {
+  const { camera } = useThree();
+  const gltf = useLoader(GLTFLoader, "./elevator_s7ntech1.glb");
   const portalRef = useRef();
+  const rigidRef = useRef();
+  const targetMesh = useRef();
+  const colliderRef = useRef();
   const mixer = useRef();
+  const action = useRef();
+  const [animationStarted, setAnimationStarted] = useState(false);
+  const [binded, setBinded] = useState(false);
+  const verticalOffset = 10;
+  const bindOffset = 2;
 
   useEffect(() => {
-    if (!gltf || !gltf.scene) return;
+    mixer.current = new THREE.AnimationMixer(gltf.scene);
+    action.current = mixer.current.clipAction(gltf.animations[0]);
+    action.current.setLoop(THREE.LoopOnce);
+    action.current.clampWhenFinished = true;
+    action.current.timeScale = 1;
+
+    action.current.getMixer().addEventListener("finished", () => {
+      if (onFinish) onFinish();
+    });
 
     gltf.scene.traverse((child) => {
       if (child.isMesh) {
         child.castShadow = true;
         child.receiveShadow = true;
-        child.position.set(0, 0, 0);
+      }
+      if (child.name === "arc1Base") {
+        targetMesh.current = child;
       }
     });
+  }, [gltf, onFinish]);
 
-    if (gltf.animations.length > 0) {
-      mixer.current = new THREE.AnimationMixer(gltf.scene);
-      const action = mixer.current.clipAction(gltf.animations[0]);
-      action.setLoop(THREE.LoopOnce);
-      action.clampWhenFinished = true;
-      action.timeScale = 1;
-      action.play();
+  useFrame((state, delta) => {
+    if (animationStarted) {
+      mixer.current?.update(delta);
     }
-  }, [gltf]);
 
-  useFrame(({ camera }, delta) => {
-    mixer.current?.update(delta);
+    // Asansör rigidbody kinematik hareketi:
+    if (rigidRef.current && targetMesh.current) {
+      const worldPos = new THREE.Vector3();
+      targetMesh.current.getWorldPosition(worldPos);
+      rigidRef.current.setNextKinematicTranslation({
+        x: worldPos.x,
+        y: worldPos.y + verticalOffset,
+        z: worldPos.z
+      });
+    }
 
-    if (portalRef.current) {
-      const portalBox = new THREE.Box3().setFromObject(portalRef.current);
-      if (portalBox.containsPoint(camera.position)) {
-        onTeleport?.();
+    // Kamera rigidbodyye bind olunca artık RigidBody'nin pozisyonunu takip etsin:
+    if (binded && rigidRef.current) {
+      const bodyPos = rigidRef.current.translation();
+      camera.position.set(bodyPos.x, bodyPos.y + bindOffset, bodyPos.z);
+      camera.lookAt(bodyPos.x, bodyPos.y + bindOffset, bodyPos.z - 10);
+    }
+
+    // Bind algılama
+    if (!animationStarted && colliderRef.current) {
+      const colliderPos = new THREE.Vector3();
+      colliderRef.current.getWorldPosition(colliderPos);
+      const distance = colliderPos.distanceTo(camera.position);
+
+      if (distance < 7) {
+        if (disableControls) disableControls();
+        action.current.play();
+        setAnimationStarted(true);
+        setBinded(true);
       }
     }
   });
@@ -45,12 +83,14 @@ export default function PortalElevator({ cubeSize = 100, cubePosition = [0, 0, -
   const x = cubePosition[0];
 
   return gltf ? (
-    <primitive
-      ref={portalRef}
-      object={gltf.scene}
-      position={[x, y, z]}
-      rotation={[0, 0, 0]}
-      scale={[8, 8, 8]}
-    />
+    <group position={[x, y, z]}>
+      <primitive ref={portalRef} object={gltf.scene} rotation={[0, 0, 0]} scale={[8, 8, 8]} />
+      <RigidBody ref={rigidRef} type="kinematicPosition" colliders={false}>
+        <mesh position={[0, -2, 0]} ref={colliderRef}>
+          <cylinderGeometry args={[5, 5, 10, 32]} />
+          <meshStandardMaterial color="orange" transparent opacity={0.3} />
+        </mesh>
+      </RigidBody>
+    </group>
   ) : null;
 }

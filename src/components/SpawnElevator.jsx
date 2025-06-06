@@ -67,25 +67,13 @@ export default function SpawnElevator({ cubeSize = 100, cubePosition = [0, 0, -5
   <RigidBody ref={rigidRef} type="kinematicPosition" colliders={false}>
     
     {/* Yan çeper */}
-    <mesh position={[0, 5, 0]}>
-      <cylinderGeometry args={[4.5, 4.5, 10, 32, 1, true]} />
-      <meshStandardMaterial
-        color="limegreen"
-        transparent
-        opacity={0.2}
-        side={THREE.DoubleSide} // 👈 Bu satırı ekledik
-      />
-    </mesh>
+    <mesh position={[0, 5, 0]} visible={false}>
+  <cylinderGeometry args={[4.5, 4.5, 10, 32, 1, true]} />
+</mesh>
 
     {/* Taban */}
-    <mesh position={[0, 0, 0]}>
+    <mesh position={[0, 0, 0]} visible={false}>
       <cylinderGeometry args={[4.5, 4.5, 0.5, 32]} />
-      <meshStandardMaterial
-        color="red"
-        transparent
-        opacity={0.3}
-        side={THREE.DoubleSide} // 👈 Bu da önemli
-      />
     </mesh>
 
   </RigidBody>

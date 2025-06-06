@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useThree, useLoader } from "@react-three/fiber";
+import React, { useState, useEffect, useRef } from 'react';
+import { useThree, useLoader, useFrame } from "@react-three/fiber";
 import * as THREE from 'three';
 
 import SpawnElevator from "./SpawnElevator";
@@ -12,24 +12,31 @@ export default function MemoryRoom({ visible = true }) {
   const { camera } = useThree();
   const [insideArea, setInsideArea] = useState(false);
   const [elevatorAnimationDone, setElevatorAnimationDone] = useState(false);
+  const [portalBind, setPortalBind] = useState(false);
 
-  // Silindirin parametreleri
   const CYLINDER_RADIUS = 64;
   const CYLINDER_HEIGHT = 100;
   const CYLINDER_POSITION = [0, 0, -5000];
 
-  // Panorama küre
+  // 🌎 Dönen küre componenti
   function PanoramicSkySphere({ radius = 5000, texturePath = './m11.jpg', position = [0, 0, -5000] }) {
     const texture = useLoader(THREE.TextureLoader, texturePath);
+    const sphereRef = useRef();
+
+    useFrame((state, delta) => {
+      if (sphereRef.current) {
+        sphereRef.current.rotation.y += delta * 0.07; // dönme hızı
+      }
+    });
+
     return (
-      <mesh position={position}>
+      <mesh ref={sphereRef} position={position}>
         <sphereGeometry args={[radius, 64, 64]} />
         <meshBasicMaterial map={texture} side={THREE.BackSide} />
       </mesh>
     );
   }
 
-  // Mouse tıklayınca pointer lock
   useEffect(() => {
     const handleClick = () => {
       if (document.body.requestPointerLock) {
@@ -40,7 +47,6 @@ export default function MemoryRoom({ visible = true }) {
     return () => window.removeEventListener('click', handleClick);
   }, []);
 
-  // Kamera merkezi kontrolü
   useEffect(() => {
     const checkInterval = setInterval(() => {
       try {
@@ -89,6 +95,7 @@ export default function MemoryRoom({ visible = true }) {
       <SpawnElevator
         cubeSize={CYLINDER_HEIGHT}
         cubePosition={CYLINDER_POSITION}
+        onAnimationDone={() => setElevatorAnimationDone(true)}
       />
 
       <PortalElevator
@@ -105,14 +112,9 @@ export default function MemoryRoom({ visible = true }) {
         initialLookAt={[0, -35, -5010]}
         moveSpeed={25}
         elevatorDone={elevatorAnimationDone}
+        controlsEnabled={true}
+        portalBind={portalBind}
       />
-      
-      <SpawnElevator
-  cubeSize={CYLINDER_HEIGHT}
-  cubePosition={CYLINDER_POSITION}
-  onAnimationDone={() => setElevatorAnimationDone(true)}
-/>
-
     </group>
   );
 }
